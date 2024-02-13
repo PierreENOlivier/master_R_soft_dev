@@ -1,0 +1,327 @@
+---
+title: "Module 1 - Functions"
+author: "Pierre Olivier"
+format: html
+editor: visual
+---
+
+# Advanced R - Module 2 - Functional programming
+
+## Swirl sessions
+
+```{r}
+# install.packages("swirl")
+library(swirl)
+install_course("Advanced R Programming")
+```
+
+To get started
+
+```{r}
+swirl()
+# skip()
+# play() + nxt()
+# bye()
+# main()
+# info()
+# 
+```
+
+[Swirl Token for Advanced R Prog.](https://www.coursera.org/learn/advanced-r/programming/zkiAQ/swirl-lesson)
+
+### Swirl - Functional programming with `purrr`
+
+```{r}
+library(purrr)
+
+```
+
+| Functional programming is a programming philosophy based on lambda calculus. Lambda calculus was
+| created by Alonzo Church, the PhD adviser to Alan Turing who is known for his role in cracking the
+| encryption of the Nazi’s Enigma machine during World War Two. Functional programming has been a
+| popular approach ever since it helped bring down the Third Reich.
+
+| Functional programming concentrates on four constructs:
+
+1.  Data (numbers, strings, etc),
+2.  Variables (function arguments),
+3.  Functions, and
+4.  Function Applications (evaluating functions given arguments and/or data).
+
+| There are groups of functions that are essential for functional programming. In most cases they take
+| a function and a data structure as arguments, and that function is applied to that data structure in
+| some way. The purrr library contains many of these functions and we’ll be using it throughout this
+| lesson. Functional programming is concerned mostly with lists and vectors. I may refer to just lists
+| or vectors, but you should know that what applies for lists generally applies for vectors and
+| vice-versa.
+
+Functional programming is a vectorized language.
+
+#### Map functions and mapping
+
+| The map family of functions applies a function to the elements of a data structure, usually a list or
+| a vector. The function is evaluated once for each element of the vector with the vector element as
+| the first argument to the function. The return value is the same kind of data structure (a list or
+| vector) but with every element replaced by the result of the function being evaluated with the
+| corresponding element as the argument to the function.
+
+The map() function always return a list. Other equivalents have been defined to return specific vectors or lists. map() \<=\> list map_lgl() \<=\> vector of logicals map_chr \<=\> vector of character strings map_dbl() \<=\> vector of numerical values
+
+```{r}
+# Some functions coming with the lesson
+int_to_string <- function(x){
+    # Convert a number into its string equivaluent.
+  c("one", "two", "three", "four", "five",
+    "six", "seven", "eight", "nine", "ten")[x]
+}
+
+gt <- function(a, b){
+    # Returns TRUE if a is greater than b, otherwise returns FALSE.
+  a > b
+}
+
+is_even <- function(x){
+    # Returns TRUE is x is even, otherwise returns FALSE.
+  x %% 2 == 0
+}
+
+square <- function(x){
+    # Computes the square of x.
+  x^2
+}
+
+add_talk <- function(x, y){
+    # Adds x and y and produces a message about which numbers are being added.
+  message("x is ", x)
+  message("y is ", y, "\n")
+  x + y
+}
+
+paste_talk <- function(x, y){
+    # Concatenates the strings x and y and produces a message about which stirngs are being concatenated.
+  message("x is ", x)
+  message("y is ", y, "\n")
+  paste0(x, y)
+}
+
+```
+
+```{r}
+map_chr(c(5, 3, 4), int_to_string)
+```
+
+map() took each elements one after the other and returned a single object. the int_to_string() function subset the manuscript equivalent of those numbers stored in a vector using their index.
+
+| Let's try using a function that has two arguments with a map function. Use map_lgl() to map the
+| function gt() to vector c(1, 2, 3, 4, 5) to see which elements of that vector are greater than 3.
+| Make sure to specify the last argument of map_lgl() as b = 3.
+
+map() can take functions with several arguments. Since we want to return logicals, we need to use the appropriate map function.
+
+Remember the argument order: 1. the variable (vector, list) 2a. (a predicate function) (a function that returns a single value or TRUE\|FALSE) 2b. a function to be applied 3. any additional arguments passed to the ellipsis, ideally named
+
+```{r}
+map_lgl(c(1, 2, 3, 4, 5), gt, b = 3)
+```
+
+```{r}
+# map_lgl(c(1, 2, 3, 4, 5), gt, c = 3)
+```
+
+Argument naming is important as map() will unpack the arguments and expect specific arguments for the function.
+
+#### Conditional mapping
+
+map_if() takes as its arguments a list or vector containing data, a predicate function, and then a function to be applied.
+
+map_if() will first use the predicate function to evaluate a condition. If the condition is met, the function will be applied.
+
+Below, if the number is even, take the square.
+
+```{r}
+map_if(
+    c(1, 2, 3, 4), 
+    is_even, # test if even number by checking the modulo of x %% 2 (if remianinder == 0)
+    square
+)
+```
+
+N.B. map_if() always return a list.
+
+map_at() is similar but applies a function based on a vector of indices:
+
+```{r}
+map_at(
+    c(4, 6, 2, 3, 8),
+    .at = c(1, 3, 4),
+    square
+)
+
+```
+
+#### Mapping over two data structures simultaneously with **map2()** family
+
+Arguments: 1. vector 1 of length v1 == v2 2. vector 2 of length v1 == v2 3a. (predicate) 3b. fucntion to apply
+
+Each element of each vector will be evaluated in parallel: 1 with 1, 2 with 2... The function will take v1 as the first argument and v2 as the second argument.
+
+```{r}
+map2_chr(
+    1:26, 
+    letters, 
+    \(x,y) paste(x, 
+                 paste(":", y, sep = " "), sep = "")
+)
+```
+
+```{r}
+map2_chr(letters, 1:26, paste)
+```
+
+### `Reduce()` function family
+
+List or vector reduction combines elements sequentially. The vector or list is **reduced** to a **single value**. The first element is combined with the second and the result is stored. The combined result is then combined with the third element and so on.
+
+N.B. reduce() takes one variable, but the function to be applied should take at least 2 arguments. reduce() will pass the first element as the first argument and second element as the second argument.
+
+add_talk() concatenates two arguments. Look at what the function returns on the second run: it took the result of the first run.
+
+```{r}
+reduce(c(1, 3, 5, 7), add_talk)
+```
+
+```{r}
+reduce(c("a", "b", "c", "d"), paste_talk)
+
+```
+
+reduce() reads left to right, or index 1 to n. The sister function reduce_right() does the opposite: right to left, n to 1. reduce() can also now accept a direction argument `.dir = c("forward", "backward")`.
+
+```{r}
+reduce(c("a", "b", "c", "d"), paste_talk, .dir = "b")
+```
+
+```{r}
+reduce_right(c("a", "b", "c", "d"), paste_talk)
+```
+
+reduce2() takes a second argument that is 1 element smaller. It combines the first 2 elements of v1 and add the 1st element of v2, then 3rd of v1, 2nd of v2, 4th of v1 and 3rd of v2.
+
+```{r}
+reduce2(c("a", "b", "c", "d"), 1:3, paste)
+
+```
+
+If provided with a list, it will return as many vectors as level of that list.
+
+```{r}
+x <- list(c(0, 1), c(2, 3), c(4, 5))
+y <- list(c(6, 7), c(8, 9))
+reduce2(x, y, paste)
+```
+
+#### Search a vector or list with purrr
+
+has_element() and detect() matches with elements of a vector. has_element() returns TRUE if an element is found.
+
+detect() takes a vector and a predicate function to test a condition, and returns the first element that is TRUE. detect_index() does the same as detect() but will return the index instead.
+
+```{r}
+?has_element
+
+```
+
+```{r}
+random_ints <- c(33, 87, 21, 85, 89, 49, 39, 63, 95, 61, 59, 67, 65, 6, 71, 
+55, 83, 25, 81, 91, 10, 29, 99, 77, 53, 23, 79, 69, 41, 93, 35, 
+47, 43, 57, 27, 51, 75, 45, 73, 97, 101, 8, 31, 37)
+
+```
+
+| Use the has_element() function to see if the vector random_ints contains the number 45.
+
+```{r}
+has_element(random_ints, 45)
+```
+
+| Use detect() and is_even() to find the first element of random_ints that is an even number.
+
+```{r}
+detect(random_ints, is_even)
+
+detect_index(random_ints, is_even)
+```
+
+#### Filter elements with keep(), discard(), every(), some()
+
+keep(), discard(), every(), and some() are known as filter functions. Each of these functions takes a vector and a predicate function as arguments.
+
+keep() only keeps the elements that satisfy the predicate.
+
+```{r}
+keep(random_ints, is_even)
+
+```
+
+discard() does the opposite and return those do not satisfy the predicate.
+
+```{r}
+discard(random_ints, is_even) # as in "discard those that are even"
+```
+
+every() and some() are the equivalents of all() and any() applied to each element of a list using a predicate. They return a single value: TRUE or FALSE.
+
+every() returns TRUE only if every element in the vector satisfies the predicate function, while the some() function returns TRUE if at least one element in the vector satisfies the predicate function.
+
+```{r}
+every(random_ints, \(x) x < 100)
+some(random_ints, is_even)
+```
+
+#### partial() assignement of arguments
+
+| Partial application of functions can allow functions to behave a little like data structures. Using
+| the partial() function from the purrr package you can specify some of the arguments of a function,
+| and then partial() will return a function that only takes the unspecified arguments.
+
+| Use partial() to create a new function called gt_10 which returns TRUE if its only argument is greater than \| ten and FALSE otherwise.
+
+gt() takes two arguments: two numbers and test inequality of 1 vs 2. The partials applied to gt will keep only certain named arguments.
+
+```{r}
+gt_10 <- partial(gt, b = 10)
+
+```
+
+This is the equivalent of
+
+```{r}
+gt(11, 10)
+```
+
+With a partial, we can redefine the function without having to specify the argument that stays constant. Partial function application allows you to modify a function by pre-filling some of the arguments.
+
+```{r}
+gt_10(11)
+```
+
+#### walk() to handle side effects
+
+| Side effects of functions occur whenever a function interacts with the "outside world" - reading or
+| writing data, printing to the console, and displaying a graph are all side effects.
+
+| The results of side effects are one of the main motivations for writing code in the first place! Side
+| effects can be tricky to handle though, since the order in which functions with side effects are executed
+| often matters and there are variables that are external to the program (the relative location of some
+| data).
+
+walk() applies a function to each element but return the input without modifying it. Only side-effects are "outputted", for instance printing a message, reading a file...etc
+
+```{r}
+mark_antony <- c("Friends, Romans, countrymen,", "lend me your ears;", "I come to bury Caesar,", 
+"not to praise him.")
+```
+
+```{r}
+walk(mark_antony, message)
+```
