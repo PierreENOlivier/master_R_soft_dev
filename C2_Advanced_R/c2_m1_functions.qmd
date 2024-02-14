@@ -7,6 +7,355 @@ editor: visual
 
 # Advanced R - Module 1 - Functions
 
+## Control Structures & logics
+
+### Overview
+
+Commonly used control structures are
+
+1.  if and else: testing a condition and acting on it
+2.  for: execute a loop a fixed number of times
+3.  break: break the execution of a loop
+4.  next: skip an iteration of a loop
+
+### if-statement
+
+#### Single if
+
+```         
+if(<condition>) {
+      ## do something
+}
+      ## Continue with rest of code
+```
+
+Activates if the condition is TRUE
+
+#### if-else
+
+A condition or the other (not that condition) One is TRUE, the other is FALSE.
+
+```         
+if(<condition>) {
+      ## do something
+}
+else {
+      ## do something else
+}
+```
+
+
+
+#### if elif
+
+For deeper control, you can include a series of elif statements:
+
+```         
+if(<condition1>) {
+      ## do something
+} else if(<condition2>) {
+      ## do something different
+} else {
+      ## do something different
+}
+```
+
+Example:
+```{r}
+## Generate a uniform random number
+x <- runif(1, 0, 10)
+if(x > 3) {
+        y <- 10
+} else {
+        y <- 0
+}
+```
+
+The else is not necessary, you could also use if() to cover all alternate conditions.
+
+### for() loops
+The main type of loops that can pretty much do anything a loop would be used for.
+
+for() loops take an iterator variable and assign it successive values from a variable.
+
+```{r}
+numbers <- rnorm(10)
+for(i in 1:10) {
+        print(numbers[i])
+}
+```
+
+```{r}
+x <- c("a", "b", "c", "d")
+
+for(i in 1:4) {
+        ## Print out each element of 'x'
+        print(x[i])  
+}
+```
+
+We can either use a vector or build a sequence with seq() or seq_along():
+N.B. seq_along replaces seq(1, length(x), by = 1)
+```{r}
+## Generate a sequence based on length of 'x'
+for(i in seq_along(x)) {
+    print(i)
+    print(x[i])
+}
+
+```
+
+It is not necessary to use an index-type variable:
+```{r}
+for(letter in x) {
+        print(letter)
+}
+
+for(i in 1:4) print(x[i])
+
+```
+
+### Nested for() loops
+To index at several levels or in different variables, loops can be nested:
+```{r}
+x <- matrix(1:6, 2, 3)
+
+for(i in seq_len(nrow(x))) {
+        for(j in seq_len(ncol(x))) {
+                print(x[i, j])
+        }   
+}
+
+```
+
+Nested for loops are used for scanning through multidimensional or hierarchical data structures (e.g.
+matrices, lists). For instance, to go through rows and columns.
+However, it is unusually to use more than 2-3 nested loops as it makes the code harder to understand.
+Best is to break the loop into smaller functions.
+
+#### Functions to create sequences for loops
+
+seq() allows to pass a `from`, `to`, and `by` arguments to create specific sequences with an interval.
+The `length.out` argument is used instead of `by` and will calculate the interval based on the desired length for the sequence.
+seq() is a generic function that dispatches solely based on the first argument.
+
+seq.int() returns a sequence of integers.
+
+seq_along() builds a sequence from 1, by 1, up to the length of the object passed as argument.
+seq_len() takes a number as argument and builds a sequence from 1, by 1, up to that number.
+
+```{r}
+y <- sample(1:100, size = sample(20:50, size = 1), replace = FALSE)
+y <- sort(y)
+
+seq(from = 1.1, to = 10.1, by = 1)
+seq(from = 1.0, to = 10.0, length.out = 19)
+seq(from = 1, to = 10, by = 0.5)
+
+seq.int(from = 1.1, to = 10.1, by = 1)
+
+length(y)
+seq_along(y)
+
+seq_len(10)
+
+```
+
+
+### next & break
+
+`next` skips an iteration
+`break` breaks the loop. If included in a nested for loop, it breaks that specific loop at that level and goes back to the higher levels.
+N.B. next and break do not need parenthesis as they are special functions that only transfers the loop control.
+
+```{r}
+for(i in 1:30) {
+    
+        if(i <= 20) {
+                ## Skip the first 20 iterations
+                
+                next
+            
+        }
+        print(i)
+}
+```
+
+```{r}
+for(i in 1:10) {
+      print(i)
+
+      if(i > 5) {
+              ## Stop loop after 5 iterations
+              message("Stop")
+              break  
+      }
+    message("Processed")
+}
+```
+
+
+```{r}
+for(i in seq_len(5)) {
+    for(j in seq_len(5)) {
+        print(paste0(i, ".", j))
+        if(j > 2) break
+    }
+}
+
+```
+
+### while() and repeat()
+while() loops continue as long as the condition is true.
+
+`repeat` takes no arguments works in combination with a break statement. It repeats indefinitely until it hits a break statement.
+
+```{r}
+flag <- TRUE
+result <- 0
+while(flag) {
+    print(result)
+    result <- result + 1
+    if(result > 5) flag <- FALSE
+} 
+```
+
+```{r}
+x <- 0
+repeat {
+    print(x)
+    x <- x + 1
+    if (x > 5) break
+}
+```
+
+
+### Summary 
+Control structures are primarily used to write programs.
+Within the code itself, as part of an analysis, one should prefer the `apply()` family or `map()` as they are 
+built in `C` and run much faster.
+
+
+## Functions
+### Overview
+
+What to consider:
+1. Each function is built for a specific goal and **encapsulates** a set of logics and sequence of expressions
+to achieve that goal. A single function does "one thing well". It is better to break complicated logics into
+smaller functions.
+__When writing a function, it's important to ask yourself what do I want to encapsulate?__
+
+2. Arguments are there for **users** to customize the use of the function for their own needs.
+__When writing any function it's important to ask what will the user want to modify in this function?__
+Ultimately, the answer to this question will lead to the function's **interface**.
+The interface is where the user defines the inputs.
+
+function(<interface of the function>)
+
+### Code
+Scripts and (interactive) code are designed to accomplish a single task. That task might be repeated 
+but the end goal is definite (e.g. take some input data from last year and compile a report for last year). The repetition is simply an iteration of the same task.
+
+| This code is designed to accomplish a single task---whatever it is that 
+| we are trying to do right now. For example, consider the following code that 
+| operates on download logs published by RStudio from their mirror of the
+| Comprehensive R Archive Network (CRAN). This code counts the number of times 
+| the filehash package was downloaded on July 20, 2016.
+
+```{r}
+library(readr)
+library(dplyr)
+
+## Download data from RStudio (if we haven't already)
+if(!file.exists("data/2016-07-20.csv.gz")) {
+        download.file("http://cran-logs.rstudio.com/2016/2016-07-20.csv.gz", 
+                      "data/2016-07-20.csv.gz")
+}
+cran <- read_csv("data/2016-07-20.csv.gz", col_types = "ccicccccci")
+cran %>% filter(package == "filehash") %>% nrow
+# [1] 179
+
+```
+This code is finite for that day (2016-07-20) and cannot be repeated or will lead to the same result.
+
+
+On the other hand, functions are designed to be reused.
+From the code above, some parts can be modified or expanded on to make it repeatable or transferrable
+to other similar tasks:
+- the date
+- the package of interest
+
+Once we have identified which parts of the code might change, we can build a function and its interface.
+We can specify a date and a package name as arguments, and have the function returns the number of downloads on that day for that package.
+
+### Function interface
+
+Let's decompose the function.
+
+The function takes 2 arguments:
+- pkgname: a package name as a character string
+- date: a date as a character string
+
+The function's logic:
+- extract the year from the date to insert the year as a folder category in the url
+- build the source url where to download from
+- build the destination path for the download
+- read in the file from the destination
+- filter the data
+- calculate the number of downloads
+
+```{r}
+library(dplyr)
+library(readr)
+
+## pkgname: package name (character)
+## date: YYYY-MM-DD format (character)
+num_download <- function(pkgname, date) {
+        ## Construct web URL
+        year <- substr(date, 1, 4)
+        src <- sprintf("http://cran-logs.rstudio.com/%s/%s.csv.gz",
+                       year, date)
+
+        message(paste("Downloading from:", src, sep=" "))
+        ## Construct path for storing local file
+        dest <- file.path("data", basename(src))
+        
+        
+        if(!dir.exists("data")) dir.create("data", recursive = T)
+
+        message(paste("Saving at:", dest, sep=" "))
+        ## Don't download if the file is already there!
+        if(!file.exists(dest))
+                download.file(src, dest, quiet = TRUE)
+
+        cran <- read_csv(dest, col_types = "ccicccccci", progress = FALSE)
+        cran %>% filter(package == pkgname) %>% nrow
+}
+```
+
+```{r}
+num_download("filehash", "2016-07-20")
+```
+
+
+
+#### N.B. Some cool functions
+sprintf() formats strings using the C-style formatting, similar to f-string formatting.
+basename() reads the path from right to left and keep that last file or directory up to
+the previous separator.
+dirname() is complementary to basename and keeps everything up to the last directory/file, excluded.
+
+```{r}
+path_file <- "Users/po/R/data/myfile.R"
+url <- sprintf("https://mywebsite/images/%s/%s/15", 2016, "January") # %s stands for string
+basename(path_file)
+dirname(path_file)
+
+basename(url)
+
+```
+
+
 ## Swirl sessions
 
 ```{r}
@@ -369,4 +718,3 @@ The function should be named as a character string instead of a variable.
 "I" %p% "love" %p% "R!"
 
 ```
-
