@@ -7,7 +7,299 @@ editor: visual
 
 # Advanced R - Module 2 - Functional programming
 
-## Swirl sessions
+## What is Functional Programming
+
+Functional programming is a programming philosophy based on lambda calculus. Lambda calculus was created by Alonzo Church, the PhD adviser to Alan Turing who is known for his role in cracking the encryption of the Nazi’s Enigma machine during World War Two. Functional programming has been a popular approach ever since it helped bring down the Third Reich.
+
+Functional programming concentrates on four constructs:
+
+```         
+Data (numbers, strings, etc)
+
+Variables (function arguments)
+
+Functions
+
+Function Applications (evaluating functions given arguments and/or data)
+```
+
+With functional programming, functions can be treated as data and provided as argument to other functions. With functions like the apply family, we provide data, a function, and that function is applied to the data.
+
+Functional programming also allows to return another function. Below, the **adder_maker()** returns an unevaluated function. When we evaluate adder_maker to create add2 and add3, we evaluate the inner function with the input provided to adder_maker.
+
+```{r}
+adder_maker <- function(n){
+  function(x){
+    n + x
+  }
+}
+
+add2 <- adder_maker(2)
+add3 <- adder_maker(3)
+
+```
+
+```{r}
+add2(5)
+# [1] 7
+add3(5)
+# [1] 8
+```
+
+## Core functional programming
+
+There are families of functions essential for Func Prog: they take a function and a data structure. The function is then applied to that data structure. Functional programming is mainly concerned with lists and vectors.
+
+## purrr::map()
+
+The map family applies a function to elements of a data structure and always return a list or vector. The function is evaluate once for each element of the input data structure.
+
+-   map() returns a list
+-   map_lgl() returns a vector of logical values
+-   map_chr() returns a vector of strings
+-   map_dbl() returns a vector of numerical values
+
+```{r}
+library(purrr)
+
+map_chr(c(5, 4, 3, 2, 1), function(x){
+  c("one", "two", "three", "four", "five")[x]
+})
+# [1] "five"  "four"  "three" "two"   "one"  
+
+map_lgl(c(1, 2, 3, 4, 5), function(x){
+  x > 3
+})
+# [1] FALSE FALSE FALSE  TRUE  TRUE
+```
+
+For more control, a few functions takes a predicate function to control which elements are modified. A predicate function is a function that returns TRUE or FALSE.
+
+-   map_if() applies the function if the predicate returns TRUE
+-   map_at() applies the function at specific indices
+
+```{r}
+map_if(1:5, function(x){
+              x %% 2 == 0
+            },
+            function(y){
+              y^2
+            }) %>% unlist()
+# [1]  1  4  3 16  5
+# 
+# 
+map_at(seq(100, 500, 100), c(1, 3, 5), function(x){
+  x - 10
+}) %>% unlist()
+# [1]  90 200 290 400 490
+```
+
+N.B. map_if() always returns a list.
+
+### purrr::map2()
+
+Functions can also be applied in parallel to two or more data structures.
+
+**map2()** does the same as **map()** but over two data structures of the same length. The function is applied to each element of the two structures in parallel.
+
+```{r}
+map2_chr(letters, 1:26, paste)
+# [1] "a 1"  "b 2"  "c 3"  "d 4"  "e 5"  "f 6"  "g 7"...
+```
+
+**pmap_chr()** breaks the limitations of map2() and lets you apply that function to any number of structures.
+
+```{r}
+pmap_chr(list(
+  list(1, 2, 3),
+  list("one", "two", "three"),
+  list("uno", "dos", "tres")
+), paste)
+# [1] "1 one uno"    "2 two dos"    "3 three tres"
+```
+
+## Reduce()
+
+reduce() is applied when we want to cumulatively combine elements of a vector. For instance, to compute the cumulative sum, or by adding words to a sentence.
+
+**N.B. the function used needs to take 2 arguments**
+
+List or vector reduction iteratively combines the first element of a vector with the second element of a vector, then that combined result is combined with the third element of the vector, and so on until the end of the vector is reached.
+
+```{r}
+reduce(c(1, 3, 5, 7), function(x, y){
+  message("x is ", x)
+  message("y is ", y)
+  message("")
+  x + y
+})
+# x is 1
+# y is 3
+# 
+# x is 4
+# y is 5
+# 
+# x is 9
+# y is 7
+# 
+# [1] 16
+
+```
+
+On the first iteration x has the value 1 and y has the value 3, then the two values are combined (they’re added together). On the second iteration x has the value of the result from the first iteration (4) and y has the value of the third element in the provided numeric vector (5). This process is repeated for each iteration.
+
+Using strings:
+
+```{r}
+reduce(letters[1:4], function(x, y){
+  message("x is ", x)
+  message("y is ", y)
+  message("")
+  paste0(x, y)
+})
+# x is a
+# y is b
+# 
+# x is ab
+# y is c
+# 
+# x is abc
+# y is d
+# 
+# [1] "abcd"
+```
+
+By default, reduce() combines from left to right. It has a sister function to do the opposite: **reduce_right()** reduce_right()function starts with the last element of a vector and then proceeds to the second to last element of a vector and so on:
+
+```{r}
+reduce_right(letters[1:4], function(x, y){
+  message("x is ", x)
+  message("y is ", y)
+  message("")
+  paste0(x, y)
+})
+# x is d
+# y is c
+# 
+# x is dc
+# y is b
+# 
+# x is dcb
+# y is a
+# 
+# [1] "dcba"
+```
+
+## Search elements
+
+-   has_element() (previously contains()) scan through elements for a matching condition and returns TRUE or FALSE
+-   detect() searches for the first match and return that value
+-   detect_index() searches for the first match but returns the index of that value
+
+```{r}
+contains(letters, "a")
+# [1] TRUE
+contains(letters, "A")
+# [1] FALSE
+```
+
+```{r}
+detect(20:40, function(x){
+  x > 22 && x %% 2 == 0
+})
+# [1] 24
+```
+
+```{r}
+detect_index(20:40, function(x){
+  x > 22 && x %% 2 == 0
+})
+# [1] 5
+```
+
+## Filter elements
+
+Filtering functions take a predicate function to determine what to do with an element of a list or vector.
+
+-   keep() keeps the element if the predicate returns TRUE
+-   discard() discards the element if the predicate returns TRUE
+
+Unlike map(), those functions will return a list or vector of different length from the input (if elements are removed).
+
+```{r}
+keep(1:20, function(x){
+  x %% 2 == 0
+})
+# [1]  2  4  6  8 10 12 14 16 18 20
+```
+
+```{r}
+discard(1:20, function(x){
+  x %% 2 == 0
+})
+# [1]  1  3  5  7  9 11 13 15 17 19
+```
+
+every() and some() are the functional programming equivalents of all() and any(). - every() returns TRUE if the predicate returns TRUE for all elements of the vector or list - some() returns TRUE if the predicate returns TRUE for at least one element
+
+```{r}
+every(1:20, function(x){
+  x %% 2 == 0
+})
+
+some(1:20, function(x){
+  x %% 2 == 0
+})
+```
+
+## Compose
+
+-   compose() function combines any number of functions into one function.
+
+```{r}
+n_unique <- compose(length, unique)
+# The composition above is the same as:
+# n_unique <- function(x){
+#   length(unique(x))
+# }
+
+rep(1:5, 1:5)
+# [1] 1 2 2 3 3 3 4 4 4 4 5 5 5 5 5
+
+n_unique(rep(1:5, 1:5))
+# [1] 5
+```
+
+## Partial application
+
+Partial application allows to create alternative version of a function that remembers the arguments of the original function. It allows not to have to set the argument value again.
+
+```{r}
+library(purrr)
+
+mult_three_n <- function(x, y, z){
+  x * y * z
+}
+
+mult_by_15 <- partial(mult_three_n, x = 3, y = 5)
+
+mult_by_15(z = 4)
+# [1] 60
+
+```
+
+```{r}
+add_val_ntimes <- function(val, add_val, by) {
+  multiplier <- rep(add_val, times = by)
+
+}
+
+add_5_6times
+
+add_5_6times <- 
+```
+
+# Swirl sessions
 
 ```{r}
 # install.packages("swirl")
